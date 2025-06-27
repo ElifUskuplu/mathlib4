@@ -66,9 +66,7 @@ theorem qsrt2_unique_pair {a b c d : ℚ} : a + b *√2 = c + d*√2 → a = c �
 noncomputable abbrev QSqrt2_sub_field : Subfield ℝ where
   carrier := QSqrt2
   mul_mem' := by
-    intro r s  hr hs
-    obtain ⟨a,b,hr⟩ := hr
-    obtain ⟨c,d,hs⟩ := hs
+    rintro r s ⟨a,b,hr⟩ ⟨c,d,hs⟩
     use (a*c + 2*b*d), (a*d + b*c)
     rw [hr, hs]
     ring_nf
@@ -78,23 +76,19 @@ noncomputable abbrev QSqrt2_sub_field : Subfield ℝ where
   one_mem' := by
     use 1,0; ring_nf
   add_mem' := by
-    intro r s hr hs
-    obtain ⟨a,b,hr⟩ := hr
-    obtain ⟨c,d,hs⟩ := hs
+    rintro r s ⟨a,b,hr⟩ ⟨c,d,hs⟩
     use a+c, b+d
     simp only [hr, hs, Rat.cast_add]
     ring_nf
   zero_mem' := by
     use 0,0; ring_nf
   neg_mem' := by
-    intro r hr
-    obtain ⟨a,b,hr⟩ := hr
+    rintro r ⟨a,b,hr⟩
     use -a,-b
     simp only [hr, Rat.cast_neg, mul_neg]
     ring_nf
   inv_mem' := by
-    intro r hr
-    obtain ⟨a,b,hr⟩ := hr
+    rintro r ⟨a,b,hr⟩
     by_cases hb : b = 0
     · use (1/a), 0
       rw [hr, hb]
@@ -126,6 +120,9 @@ noncomputable instance QSqrt2_order1 : LinearOrder QSqrt2 := by
 noncomputable instance QSqrt2_order2 : LinearOrder QSqrt2 where
   le := by
     intro ⟨r, hr⟩ ⟨s,hs⟩
+    --obtain ⟨a,b,hab⟩ := hr
+    /-tactic 'cases' failed, nested error:
+      tactic 'induction' failed, recursor 'Exists.casesOn' can only eliminate into Prop-/
     set a := hr.choose with ha
     set b:= hr.choose_spec.choose with hb
     set c := hs.choose with hc
@@ -234,6 +231,31 @@ noncomputable instance QSqrt2_order2 : LinearOrder QSqrt2 where
         have hs_def := hs.choose_spec.choose_spec
         rw [hr_def, hs_def]
         --rw [this.1, this.2] not working
+        /-tactic 'rewrite' failed, motive is not type correct:
+  fun _a ↦ ↑(Exists.choose hr) + ↑⋯.choose * √2 = ↑_a + ↑⋯.choose * √2
+Error: Application type mismatch: In the application
+  ⋯.choose
+the argument
+  Exists.choose_spec hs
+has type
+  ∃ b, s = ↑(Exists.choose hs) + ↑b * √2 : Prop
+but is expected to have type
+  ∃ a, s = ↑_a + ↑a * √2 : Prop
+
+Explanation: The rewrite tactic rewrites an expression 'e' using an equality
+ 'a = b' by the following process. First, it looks for all 'a' in 'e'.
+  Second, it tries to abstract these occurrences of 'a' to create a
+  function 'm := fun _a => ...', called the *motive*, with the property
+  that 'm a' is definitionally equal to 'e'. Third, we observe that 'congrArg' implies
+  hat 'm a = m b', which can be used with lemmas such as 'Eq.mpr' to change the goal.
+  However, if 'e' depends on specific properties of 'a', then
+   the motive 'm' might not typecheck.
+
+Possible solutions: use rewrite's 'occs' configuration option to limit
+ which occurrences are rewritten, or use 'simp' or 'conv' mode, which have
+ strategies for certain kinds of dependencies (these tactics can handle proofs
+ and 'Decidable' instances whose types depend on the rewritten term, and 'simp' can
+  apply user-defined '@[congr]' theorems as well).-/
         congr 1
         · simp only [this.1]
         · congr 1
